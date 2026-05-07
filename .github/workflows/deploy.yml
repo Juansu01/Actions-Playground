@@ -1,0 +1,38 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci --production
+
+    - name: Deploy to Lightsail via rsync
+      uses: easingthemes/ssh-deploy@v5.1.0
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        REMOTE_HOST: ${{ vars.SSH_HOST }}
+        REMOTE_USER: ${{ vars.SSH_USER }}
+        # No REMOTE_PORT needed — defaults to 22
+        SOURCE: "."
+        TARGET: "/home/${{ vars.SSH_USER }}/app"
+        EXCLUDE: ".git, .github"
+        SCRIPT_AFTER: |
+          cd /home/${{ vars.SSH_USER }}/app
+          pm2 restart app || pm2 start index.js --name app
+          pm2 save
