@@ -2,12 +2,13 @@ name: Deploy to Lightsail
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ develop, staging, main ]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
     
     steps:
     - name: Checkout code
@@ -25,14 +26,14 @@ jobs:
     - name: Deploy to Lightsail via rsync
       uses: easingthemes/ssh-deploy@v5.1.0
       with:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        REMOTE_HOST: ${{ vars.SSH_HOST }}
-        REMOTE_USER: ${{ vars.SSH_USER }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_SECRET_KEY  }}
+        REMOTE_HOST: ${{ secrets.SSH_HOST }}
+        REMOTE_USER: ${{ secrets.SSH_USER }}
         # No REMOTE_PORT needed — defaults to 22
         SOURCE: "."
-        TARGET: "/home/${{ vars.SSH_USER }}/app"
+        TARGET: "/home/${{ secrets.SSH_USER }}/app"
         EXCLUDE: ".git, .github"
         SCRIPT_AFTER: |
-          cd /home/${{ vars.SSH_USER }}/app
+          cd /home/${{ secrets.SSH_USER }}/app
           pm2 restart app || pm2 start index.js --name app
           pm2 save
