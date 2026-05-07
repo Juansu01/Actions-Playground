@@ -34,6 +34,8 @@ jobs:
         TARGET: "/home/${{ secrets.SSH_USER }}/app"
         EXCLUDE: ".git, .github"
         SCRIPT_AFTER: |
+          export PATH=/opt/bitnami/node/bin:$PATH
           cd /home/${{ secrets.SSH_USER }}/app
+          npm ci --production
           pm2 restart app || pm2 start index.js --name app
           pm2 save
